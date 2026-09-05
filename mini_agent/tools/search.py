@@ -5,6 +5,11 @@ from pathlib import Path
 from mini_agent.state import StateError, resolve_path
 
 MAX_GREP_RESULTS = 100
+IGNORE_DIRS = {".git", ".miniagent", "node_modules", "__pycache__", ".venv"}
+
+
+def _ignored(entry: Path, root: Path) -> bool:
+    return any(part in IGNORE_DIRS for part in entry.relative_to(root).parts)
 
 
 def list_dir(root: Path, path: str = ".", pattern: str | None = None, recursive: bool = False) -> dict:
@@ -19,6 +24,8 @@ def list_dir(root: Path, path: str = ".", pattern: str | None = None, recursive:
     entries = p.rglob("*") if recursive else p.iterdir()
     names = []
     for entry in entries:
+        if _ignored(entry, root):
+            continue
         if pattern and not fnmatch.fnmatch(entry.name, pattern):
             continue
         rel = str(entry.relative_to(root))
@@ -40,14 +47,18 @@ def grep(root: Path, pattern: str, path: str = ".", glob: str | None = None) -> 
     matches = []
     if p.is_file():
         files = [p]
+        skip_ignored = False
     else:
         files = p.rglob(glob) if glob else p.rglob("*")
+        skip_ignored = True
     for f in files:
         if not f.is_file():
             continue
+        if skip_ignored and _ignored(f, root):
+            continue
         try:
-            text = f.read_text(errors="replace")
-        except OSError:
+            text = f.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
             continue
         for i, line in enumerate(text.splitlines(), start=1):
             if regex.search(line):

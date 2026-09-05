@@ -27,6 +27,18 @@ def resolve_path(root: Path, path: str) -> Path:
     return candidate
 
 
+def _sanitize_history(messages: list[dict]) -> list[dict]:
+    while messages and messages[0].get("role") != "user":
+        messages.pop(0)
+    if messages and messages[-1].get("role") == "assistant":
+        content = messages[-1].get("content")
+        if isinstance(content, list) and any(
+            isinstance(b, dict) and b.get("type") == "tool_use" for b in content
+        ):
+            messages.pop()
+    return messages
+
+
 def load_history(root: Path) -> list[dict]:
     f = state_dir(root) / "history.jsonl"
     if not f.exists():
@@ -41,7 +53,7 @@ def load_history(root: Path) -> list[dict]:
     except (json.JSONDecodeError, OSError) as e:
         warnings.warn(f"failed to load {f}: {e}, starting fresh")
         return []
-    return messages
+    return _sanitize_history(messages)
 
 
 def append_history(root: Path, message: dict) -> None:

@@ -3,6 +3,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+MAX_OUTPUT_CHARS = 20000
+
+
+def _truncate(text: str) -> str:
+    if len(text) > MAX_OUTPUT_CHARS:
+        return text[:MAX_OUTPUT_CHARS] + f"\n... [truncated, {len(text)} chars total]"
+    return text
+
 
 def run_python(root: Path, code: str, timeout: int = 30) -> dict:
     try:
@@ -32,10 +40,10 @@ def run_python(root: Path, code: str, timeout: int = 30) -> dict:
     traceback = None
     m = re.search(r"Traceback \(most recent call last\):.*", proc.stderr, re.DOTALL)
     if m:
-        traceback = m.group(0)
+        traceback = _truncate(m.group(0))
     return {
-        "stdout": proc.stdout,
-        "stderr": proc.stderr,
+        "stdout": _truncate(proc.stdout),
+        "stderr": _truncate(proc.stderr),
         "exit_code": proc.returncode,
         "traceback": traceback,
         "timed_out": False,

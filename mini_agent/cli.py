@@ -5,10 +5,16 @@ from mini_agent.llm_client import LLMClient
 def main():
     root = state.resolve_project_root()
     messages = state.load_history(root)
-    client = LLMClient()
+    try:
+        client = LLMClient()
+    except Exception as e:
+        print(f"error: {e}")
+        return
 
     try:
         messages = agent_loop.ensure_summary(root, client, messages)
+    except KeyboardInterrupt:
+        print("\ninterrupted")
     except Exception as e:
         print(f"error: {e}")
 
@@ -26,6 +32,8 @@ def main():
         state.append_history(root, user_message)
         try:
             messages = agent_loop.run_turn(root, client, messages)
+        except KeyboardInterrupt:
+            print("\ninterrupted")
         except Exception as e:
             print(f"error: {e}")
 

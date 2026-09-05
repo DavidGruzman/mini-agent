@@ -15,7 +15,10 @@ def read_file(root: Path, path: str) -> dict:
         return {"error": f"file not found: {path}"}
     if p.is_dir():
         return {"error": f"'{path}' is a directory, not a file"}
-    text = p.read_text(errors="replace")
+    try:
+        text = p.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return {"error": f"'{path}' is not valid UTF-8 text (binary file?)"}
     if len(text) > MAX_READ_CHARS:
         text = text[:MAX_READ_CHARS] + f"\n... [truncated, {len(text)} chars total]"
     return {"content": text}
@@ -48,14 +51,17 @@ def edit_file(root: Path, path: str, old_string: str, new_string: str) -> dict:
         return {"error": f"file not found: {path}"}
     if p.is_dir():
         return {"error": f"'{path}' is a directory, not a file"}
-    text = p.read_text(errors="replace")
+    try:
+        text = p.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return {"error": f"'{path}' is not valid UTF-8 text (binary file?)"}
     count = text.count(old_string)
     if count == 0:
         return {"error": "old_string not found"}
     if count > 1:
         return {"error": f"old_string is not unique ({count} matches)"}
     new_text = text.replace(old_string, new_string, 1)
-    p.write_text(new_text)
+    p.write_text(new_text, encoding="utf-8")
     diff = "\n".join(
         difflib.unified_diff(text.splitlines(), new_text.splitlines(), lineterm="")
     )

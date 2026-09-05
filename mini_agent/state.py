@@ -1,5 +1,6 @@
 import json
 import os
+import warnings
 from pathlib import Path
 
 
@@ -37,7 +38,8 @@ def load_history(root: Path) -> list[dict]:
                 line = line.strip()
                 if line:
                     messages.append(json.loads(line))
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError) as e:
+        warnings.warn(f"failed to load {f}: {e}, starting fresh")
         return []
     return messages
 
@@ -54,7 +56,8 @@ def load_todo(root: Path) -> list[dict]:
         return []
     try:
         return json.loads(f.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError) as e:
+        warnings.warn(f"failed to load {f}: {e}, starting fresh")
         return []
 
 
@@ -69,5 +72,6 @@ def load_summary(root: Path) -> str | None:
         return None
     try:
         return f.read_text()
-    except OSError:
+    except OSError as e:
+        warnings.warn(f"failed to load {f}: {e}, starting fresh")
         return None

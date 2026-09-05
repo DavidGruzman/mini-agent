@@ -7,7 +7,10 @@ def main():
     messages = state.load_history(root)
     client = LLMClient()
 
-    messages = agent_loop.ensure_summary(root, client, messages)
+    try:
+        messages = agent_loop.ensure_summary(root, client, messages)
+    except Exception as e:
+        print(f"error: {e}")
 
     print(f"mini-agent ready in {root}. Type your instruction (Ctrl-D to exit).")
     while True:
@@ -21,7 +24,10 @@ def main():
         user_message = {"role": "user", "content": user_input}
         messages.append(user_message)
         state.append_history(root, user_message)
-        messages = agent_loop.run_turn(root, client, messages)
+        try:
+            messages = agent_loop.run_turn(root, client, messages)
+        except Exception as e:
+            print(f"error: {e}")
 
 
 if __name__ == "__main__":

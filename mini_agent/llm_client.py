@@ -29,3 +29,6 @@ class LLMClient:
                 if attempt < MAX_RETRIES - 1:
                     time.sleep(2 ** attempt)
         raise last_error
+
+    def list_models(self) -> list[str]:
+        return [m.id for m in self.client.models.list()]

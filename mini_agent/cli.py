@@ -34,6 +34,21 @@ def main():
             except Exception as e:
                 print(f"error: {e}")
             continue
+        if user_input.strip() == "/models":
+            try:
+                models = client.list_models()
+                print("\n".join(models))
+            except Exception as e:
+                print(f"error: {e}")
+            continue
+        if user_input.strip() == "/model" or user_input.strip().startswith("/model "):
+            arg = user_input.strip()[len("/model"):].strip()
+            if not arg:
+                print(f"current model: {client.model}")
+            else:
+                client.model = arg
+                print(f"model set to: {client.model}")
+            continue
         user_message = {"role": "user", "content": user_input}
         messages.append(user_message)
         state.append_history(root, user_message)

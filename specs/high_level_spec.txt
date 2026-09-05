@@ -1,0 +1,7 @@
+Spec of the minimalistic coding agent.
+
+What does it mean? This is an agent that capable of reading current codebase, and implement features.
+What is minimal set of tools such agent should have? reading code, run python, read logs and debug.
+What is user interface for such agent: it should be commmand line.
+Do the agent need its own memory ? yes, it is. Agent should create its own directory  in the project and manage its state here.
+What LLM should be used? Let say anthropic models should be an option to use.

@@ -39,7 +39,7 @@ def _sanitize_history(messages: list[dict]) -> list[dict]:
     return messages
 
 
-def load_history(root: Path) -> list[dict]:
+def load_history_raw(root: Path) -> list[dict]:
     f = state_dir(root) / "history.jsonl"
     if not f.exists():
         return []
@@ -53,7 +53,11 @@ def load_history(root: Path) -> list[dict]:
     except (json.JSONDecodeError, OSError) as e:
         warnings.warn(f"failed to load {f}: {e}, starting fresh")
         return []
-    return _sanitize_history(messages)
+    return messages
+
+
+def load_history(root: Path) -> list[dict]:
+    return _sanitize_history(load_history_raw(root))
 
 
 def append_history(root: Path, message: dict) -> None:

@@ -1,4 +1,4 @@
-from mini_agent import agent_loop, state
+from mini_agent import agent_loop, state, visualize
 from mini_agent.llm_client import LLMClient
 
 
@@ -26,6 +26,13 @@ def main():
             print()
             break
         if not user_input.strip():
+            continue
+        if user_input.strip() == "/visualize":
+            try:
+                out = visualize.generate_html(root)
+                print(f"wrote {out}")
+            except Exception as e:
+                print(f"error: {e}")
             continue
         user_message = {"role": "user", "content": user_input}
         messages.append(user_message)

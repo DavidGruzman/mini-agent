@@ -21,6 +21,14 @@ def run_python(root: Path, code: str, timeout: int = 30) -> dict:
             "traceback": None,
             "timed_out": True,
         }
+    except (OSError, MemoryError) as e:
+        return {
+            "stdout": "",
+            "stderr": str(e),
+            "exit_code": None,
+            "traceback": None,
+            "timed_out": False,
+        }
     traceback = None
     m = re.search(r"Traceback \(most recent call last\):.*", proc.stderr, re.DOTALL)
     if m:

@@ -14,6 +14,8 @@ def list_dir(root: Path, path: str = ".", pattern: str | None = None, recursive:
         return {"error": str(e)}
     if not p.exists():
         return {"error": f"path not found: {path}"}
+    if not p.is_dir():
+        return {"error": f"not a directory: {path}"}
     entries = p.rglob("*") if recursive else p.iterdir()
     names = []
     for entry in entries:
@@ -29,12 +31,17 @@ def grep(root: Path, pattern: str, path: str = ".", glob: str | None = None) -> 
         p = resolve_path(root, path)
     except StateError as e:
         return {"error": str(e)}
+    if not p.exists():
+        return {"error": f"path not found: {path}"}
     try:
         regex = re.compile(pattern)
     except re.error as e:
         return {"error": f"invalid regex: {e}"}
     matches = []
-    files = p.rglob(glob) if glob else p.rglob("*")
+    if p.is_file():
+        files = [p]
+    else:
+        files = p.rglob(glob) if glob else p.rglob("*")
     for f in files:
         if not f.is_file():
             continue

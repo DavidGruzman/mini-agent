@@ -37,8 +37,9 @@ provider abstraction layer is built now.
 All path-based tools resolve paths relative to the project root and reject
 any path that escapes it.
 
-- `read_file(path)` — file contents (large files truncated, re-read a range
-  if needed).
+- `read_file(path)` — file contents (large files truncated, with a note
+  reporting the total size; no partial re-read of a specific range — out
+  of scope for v1).
 - `write_file(path, content)` — create or fully overwrite a file; returns a
   diff (or "created").
 - `edit_file(path, old_string, new_string)` — exact find/replace,

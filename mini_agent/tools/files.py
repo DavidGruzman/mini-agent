@@ -13,6 +13,8 @@ def read_file(root: Path, path: str) -> dict:
         return {"error": str(e)}
     if not p.exists():
         return {"error": f"file not found: {path}"}
+    if p.is_dir():
+        return {"error": f"'{path}' is a directory, not a file"}
     text = p.read_text(errors="replace")
     if len(text) > MAX_READ_CHARS:
         text = text[:MAX_READ_CHARS] + f"\n... [truncated, {len(text)} chars total]"
@@ -24,6 +26,8 @@ def write_file(root: Path, path: str, content: str) -> dict:
         p = resolve_path(root, path)
     except StateError as e:
         return {"error": str(e)}
+    if p.exists() and p.is_dir():
+        return {"error": f"'{path}' is a directory, not a file"}
     before = p.read_text(errors="replace") if p.exists() else None
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content)
@@ -42,6 +46,8 @@ def edit_file(root: Path, path: str, old_string: str, new_string: str) -> dict:
         return {"error": str(e)}
     if not p.exists():
         return {"error": f"file not found: {path}"}
+    if p.is_dir():
+        return {"error": f"'{path}' is a directory, not a file"}
     text = p.read_text(errors="replace")
     count = text.count(old_string)
     if count == 0:

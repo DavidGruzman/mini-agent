@@ -23,7 +23,7 @@ class LLMClient:
                     messages=messages,
                     tools=tools,
                 )
-            except anthropic.APIError as e:
+            except (anthropic.RateLimitError, anthropic.APIConnectionError, anthropic.APITimeoutError, anthropic.InternalServerError) as e:
                 last_error = e
                 time.sleep(2 ** attempt)
         raise last_error

@@ -22,62 +22,40 @@ conventions. Keep it concise. Do not ask the user anything - just do this now.""
 
 def build_system_prompt(root: Path) -> str:
     summary = state.load_summary(root)
-    if summary is not None:
-        return BASE_SYSTEM_PROMPT + "\n\n== Project summary ==\n" + summary
-    return BASE_SYSTEM_PROMPT
+    if summary is None:
+        return BASE_SYSTEM_PROMPT
+    return BASE_SYSTEM_PROMPT + "\n\n== Project summary ==\n" + summary
 
 
 def run_turn(root: Path, client: LLMClient, messages: list[dict]) -> list[dict]:
     registry = build_registry(root)
     for _ in range(MAX_ITERATIONS):
-        system = build_system_prompt(root)
-        response = client.send(system, messages, TOOL_SCHEMAS)
+        response = client.send(build_system_prompt(root), messages, TOOL_SCHEMAS)
         assistant_content = [block.model_dump() for block in response.content]
         assistant_message = {"role": "assistant", "content": assistant_content}
         messages.append(assistant_message)
         state.append_history(root, assistant_message)
 
-        if response.stop_reason == "max_tokens":
-            print("(warning: response was truncated at the token limit)")
-
         tool_uses = [b for b in assistant_content if b["type"] == "tool_use"]
         if not tool_uses:
-            texts = [b["text"] for b in assistant_content if b["type"] == "text"]
-            print("\n".join(texts))
+            print("\n".join(b["text"] for b in assistant_content if b["type"] == "text"))
             return messages
 
-        interrupted = False
         tool_results = []
         for block in tool_uses:
-            if interrupted:
-                result = {"error": "interrupted"}
-            else:
-                fn = registry.get(block["name"])
-                if fn is None:
-                    result = {"error": f"unknown tool: {block['name']}"}
-                else:
-                    try:
-                        result = fn(block["input"])
-                    except KeyboardInterrupt:
-                        result = {"error": "interrupted"}
-                        interrupted = True
-                    except Exception as e:
-                        result = {"error": str(e)}
+            fn = registry.get(block["name"])
+            try:
+                result = fn(block["input"]) if fn else {"error": f"unknown tool: {block['name']}"}
+            except Exception as e:
+                result = {"error": str(e)}
             content = str(result)
             if len(content) > MAX_RESULT_CHARS:
                 content = content[:MAX_RESULT_CHARS] + f"... [truncated, {len(content)} chars total]"
-            tool_results.append(
-                {
-                    "type": "tool_result",
-                    "tool_use_id": block["id"],
-                    "content": content,
-                }
-            )
+            tool_results.append({"type": "tool_result", "tool_use_id": block["id"], "content": content})
+
         tool_message = {"role": "user", "content": tool_results}
         messages.append(tool_message)
         state.append_history(root, tool_message)
-        if interrupted:
-            return messages
     print(f"(warning: stopped after {MAX_ITERATIONS} tool round-trips without finishing)")
     return messages
 
@@ -88,7 +66,4 @@ def ensure_summary(root: Path, client: LLMClient, messages: list[dict]) -> list[
     user_message = {"role": "user", "content": SUMMARY_BOOTSTRAP_INSTRUCTION}
     messages.append(user_message)
     state.append_history(root, user_message)
-    messages = run_turn(root, client, messages)
-    if state.load_summary(root) is None:
-        print("(warning: no .miniagent/summary.md was created during the bootstrap exploration)")
-    return messages
+    return run_turn(root, client, messages)
